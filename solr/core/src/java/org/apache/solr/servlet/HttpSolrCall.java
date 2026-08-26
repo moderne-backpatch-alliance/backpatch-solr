@@ -75,6 +75,7 @@ import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.CommandOperation;
+import org.apache.solr.common.util.SuppressForbidden;
 import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.JsonSchemaValidator;
 import org.apache.solr.common.util.NamedList;
@@ -191,12 +192,19 @@ public class HttpSolrCall {
     this.response = response;
     this.retry = retry;
     this.requestType = RequestType.UNKNOWN;
+    normalizeAndSetPath(ServletUtils.getPathAfterContext(req));
+
     req.setAttribute(HttpSolrCall.class.getName(), this);
     // set a request timer which can be reused by requests if needed
     req.setAttribute(SolrRequestParsers.REQUEST_TIMER_SERVLET_ATTRIBUTE, new RTimerTree());
     // put the core container in request attribute
     req.setAttribute("org.apache.solr.CoreContainer", cores);
     path = ServletUtils.getPathAfterContext(req);
+  }
+
+  @SuppressForbidden(reason = "JDK String class doesn't offer a stripEnd equivalent")
+  protected void normalizeAndSetPath(String unnormalizedPath) {
+    this.path = StringUtils.stripEnd(unnormalizedPath, "/");
   }
 
   public String getPath() {
@@ -249,7 +257,7 @@ public class HttpSolrCall {
       // Try to resolve a Solr core name
       core = cores.getCore(origCorename);
       if (core != null) {
-        path = path.substring(idx);
+        normalizeAndSetPath(path.substring(idx));
       } else {
         if (cores.isCoreLoading(origCorename)) { // extra mem barriers, so don't look at this before trying to get core
           throw new SolrException(ErrorCode.SERVICE_UNAVAILABLE, "SolrCore is loading");
@@ -257,7 +265,7 @@ public class HttpSolrCall {
         // the core may have just finished loading
         core = cores.getCore(origCorename);
         if (core != null) {
-          path = path.substring(idx);
+          normalizeAndSetPath(path.substring(idx));
         } else {
           if (!cores.isZooKeeperAware()) {
             core = cores.getCore("");
@@ -281,14 +289,14 @@ public class HttpSolrCall {
         core = getCoreByCollection(collectionName, isPreferLeader); // find a local replica/core for the collection
         if (core != null) {
           if (idx > 0) {
-            path = path.substring(idx);
+            normalizeAndSetPath(path.substring(idx));
           }
         } else {
           // if we couldn't find it locally, look on other nodes
           if (idx > 0) {
             extractRemotePath(collectionName, origCorename);
             if (action == REMOTEQUERY) {
-              path = path.substring(idx);
+              normalizeAndSetPath(path.substring(idx));
               return;
             }
           }

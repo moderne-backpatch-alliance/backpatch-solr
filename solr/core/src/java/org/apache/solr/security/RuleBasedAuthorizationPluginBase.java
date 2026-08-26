@@ -23,10 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SpecProvider;
 import org.apache.solr.common.util.Utils;
 import org.apache.solr.common.util.ValidatingJsonMap;
@@ -181,6 +183,16 @@ public abstract class RuleBasedAuthorizationPluginBase implements AuthorizationP
     } else {
       PermissionNameProvider handler = (PermissionNameProvider) context.getHandler();
       PermissionNameProvider.Name permissionName = handler.getPermissionName(context);
+      if (permissionName == null) {
+        final String errorMessage =
+            String.format(
+                Locale.ROOT,
+                "Unable to find 'predefined' associated with requestHandler [%s] and request [%s %s]",
+                handler.getClass().getName(),
+                context.getHttpMethod(),
+                context.getResource());
+        throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, errorMessage);
+      }
 
       boolean applies = permissionName != null && predefinedPermission.name.equals(permissionName.name);
       log.trace("Request handler [{}] is associated with predefined perm [{}]? {}",

@@ -38,6 +38,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.util.BytesRef;
 import org.apache.solr.cloud.ZkController;
 import org.apache.solr.common.SolrException;
@@ -52,6 +53,7 @@ import org.apache.solr.common.cloud.ZkStateReader;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.ContentStream;
+import org.apache.solr.common.util.SuppressForbidden;
 import org.apache.solr.common.util.Utils;
 import org.apache.solr.core.CoreContainer;
 import org.apache.solr.handler.RequestHandlerBase;
@@ -117,7 +119,7 @@ public final class ZookeeperInfoHandler extends RequestHandlerBase implements Pe
   @Override
   public PermissionNameProvider.Name getPermissionName(AuthorizationContext request) {
     SolrParams params = request.getParams();
-    String path = params.get(PATH, "");
+    String path = normalizePath(params.get(PATH, ""));
     String detail = params.get(PARAM_DETAIL, "false");
     if ("/security.json".equalsIgnoreCase(path) && "true".equalsIgnoreCase(detail)) {
       return PermissionNameProvider.Name.SECURITY_READ_PERM;
@@ -433,6 +435,11 @@ public final class ZookeeperInfoHandler extends RequestHandlerBase implements Pe
       printer.close();
     }
     rsp.getValues().add(RawResponseWriter.CONTENT,printer);
+  }
+
+  @SuppressForbidden(reason = "JDK String class doesn't offer a stripEnd equivalent")
+  private String normalizePath(String path) {
+    return StringUtils.stripEnd(path, "/");
   }
 
   //--------------------------------------------------------------------------------------

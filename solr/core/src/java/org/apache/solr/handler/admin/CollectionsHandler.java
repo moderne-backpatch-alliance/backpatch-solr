@@ -196,7 +196,9 @@ public class CollectionsHandler extends RequestHandlerBase implements Permission
     String action = ctx.getParams().get("action");
     if (action == null) return PermissionNameProvider.Name.COLL_READ_PERM;
     CollectionParams.CollectionAction collectionAction = CollectionParams.CollectionAction.get(action);
-    if (collectionAction == null) return null;
+    if (collectionAction == null) {
+      throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, "Unknown action: " + action);
+    }
     return collectionAction.isWrite ?
         PermissionNameProvider.Name.COLL_EDIT_PERM :
         PermissionNameProvider.Name.COLL_READ_PERM;
