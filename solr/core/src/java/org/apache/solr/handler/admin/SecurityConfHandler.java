@@ -35,6 +35,7 @@ import org.apache.solr.common.util.Utils;
 import org.apache.solr.core.CoreContainer;
 import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.handler.RequestHandlerUtils;
+import org.apache.solr.handler.SchemaHandler;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.security.AuthenticationPlugin;
@@ -68,7 +69,7 @@ public abstract class SecurityConfHandler extends RequestHandlerBase implements 
       case "POST":
         return PermissionNameProvider.Name.SECURITY_EDIT_PERM;
       default:
-        return null;
+        throw SchemaHandler.getUnexpectedHttpMethodException(ctx.getHttpMethod());
     }
   }
 
