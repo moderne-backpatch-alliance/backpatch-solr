@@ -124,7 +124,8 @@ public class V2HttpCall extends HttpSolrCall {
             extractRemotePath(collection.getName(), collection.getName());
             if (action == REMOTEQUERY) {
               coreUrl = coreUrl.replace("/solr/", "/solr/____v2/c/");
-              this.path = path = path.substring(prefix.length() + collection.getName().length() + 2);
+              normalizeAndSetPath(path.substring(prefix.length() + collection.getName().length() + 2));
+              path = this.path;
               return;
             }
           }
@@ -143,7 +144,8 @@ public class V2HttpCall extends HttpSolrCall {
         }
       }
 
-      this.path = path = path.substring(prefix.length() + pieces.get(1).length() + 2);
+      normalizeAndSetPath(path.substring(prefix.length() + pieces.get(1).length() + 2));
+      path = this.path;
       Api apiInfo = getApiInfo(core.getRequestHandlers(), path, req.getMethod(), fullPath, parts);
       if (isCompositeApi && apiInfo instanceof CompositeApi) {
         ((CompositeApi) this.api).add(apiInfo);

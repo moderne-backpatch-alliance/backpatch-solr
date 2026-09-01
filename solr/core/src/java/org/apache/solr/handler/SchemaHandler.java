@@ -106,8 +106,14 @@ public class SchemaHandler extends RequestHandlerBase implements SolrCoreAware, 
       case "POST":
         return PermissionNameProvider.Name.SCHEMA_EDIT_PERM;
       default:
-        return null;
+        throw getUnexpectedHttpMethodException(ctx.getHttpMethod());
     }
+  }
+
+  public static SolrException getUnexpectedHttpMethodException(String methodName)
+      throws SolrException {
+    return new SolrException(
+        SolrException.ErrorCode.BAD_REQUEST, "Unexpected HTTP method: " + methodName);
   }
 
   private void handleGET(SolrQueryRequest req, SolrQueryResponse rsp) {
