@@ -33,7 +33,7 @@
 
   <resolvers>
     <ibiblio name="sonatype-releases" root="https://oss.sonatype.org/content/repositories/releases" m2compatible="true" />
-    <ibiblio name="maven.restlet.org" root="http://maven.restlet.org" m2compatible="true" />
+    <ibiblio name="maven.restlet.org" root="https://maven.restlet.talend.com" m2compatible="true" />
     <ibiblio name="releases.cloudera.com" root="http://repository.cloudera.com/content/repositories/releases" m2compatible="true" />
 
     <!-- you might need to tweak this from china so it works -->
