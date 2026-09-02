@@ -133,6 +133,11 @@ public class SolrZkClient implements Closeable {
 
   public SolrZkClient(String zkServerAddress, int zkClientTimeout, int clientConnectTimeout,
       ZkClientConnectionStrategy strat, final OnReconnect onReconnect, BeforeReconnect beforeReconnect, ZkACLProvider zkACLProvider, IsClosed higherLevelIsClosed) {
+    this(zkServerAddress, zkClientTimeout, clientConnectTimeout, strat, onReconnect, beforeReconnect, zkACLProvider, higherLevelIsClosed, true);
+  }
+
+  public SolrZkClient(String zkServerAddress, int zkClientTimeout, int clientConnectTimeout,
+      ZkClientConnectionStrategy strat, final OnReconnect onReconnect, BeforeReconnect beforeReconnect, ZkACLProvider zkACLProvider, IsClosed higherLevelIsClosed, boolean useDefaultCredsAndACLs) {
     this.zkServerAddress = zkServerAddress;
     this.higherLevelIsClosed = higherLevelIsClosed;
     if (strat == null) {
@@ -141,7 +146,7 @@ public class SolrZkClient implements Closeable {
     this.zkClientConnectionStrategy = strat;
 
     if (!strat.hasZkCredentialsToAddAutomatically()) {
-      ZkCredentialsProvider zkCredentialsToAddAutomatically = createZkCredentialsToAddAutomatically();
+      ZkCredentialsProvider zkCredentialsToAddAutomatically = useDefaultCredsAndACLs ? createZkCredentialsToAddAutomatically() : new DefaultZkCredentialsProvider();
       strat.setZkCredentialsToAddAutomatically(zkCredentialsToAddAutomatically);
     }
 
@@ -202,7 +207,7 @@ public class SolrZkClient implements Closeable {
     }
     assert ObjectReleaseTracker.track(this);
     if (zkACLProvider == null) {
-      this.zkACLProvider = createZkACLProvider();
+      this.zkACLProvider = useDefaultCredsAndACLs ? createZkACLProvider() : new DefaultZkACLProvider();
     } else {
       this.zkACLProvider = zkACLProvider;
     }

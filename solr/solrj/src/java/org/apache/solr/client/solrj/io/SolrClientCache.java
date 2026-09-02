@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.http.client.HttpClient;
 import org.apache.solr.client.solrj.SolrClient;
@@ -43,6 +44,7 @@ public class SolrClientCache implements Serializable {
 
   private final Map<String, SolrClient> solrClients = new HashMap<>();
   private final HttpClient httpClient;
+  private final AtomicReference<String> defaultZkHost = new AtomicReference<>();
 
   public SolrClientCache() {
     httpClient = null;
@@ -52,14 +54,32 @@ public class SolrClientCache implements Serializable {
     this.httpClient = httpClient;
   }
 
+  public void setDefaultZKHost(String zkHost) {
+    if (zkHost != null) {
+      zkHost = zkHost.split("/")[0];
+      if (!zkHost.isEmpty()) {
+        defaultZkHost.set(zkHost);
+      } else {
+        defaultZkHost.set(null);
+      }
+    }
+  }
+
   public synchronized CloudSolrClient getCloudSolrClient(String zkHost) {
     CloudSolrClient client;
     if (solrClients.containsKey(zkHost)) {
       client = (CloudSolrClient) solrClients.get(zkHost);
     } else {
+      // Can only use ZK ACLs if there is a default ZK Host, and the given ZK host contains that
+      // default.
+      // Basically the ZK ACLs are assumed to be only used for the default ZK host,
+      // thus we should only provide the ACLs to that Zookeeper instance.
+      String zkHostNoChroot = zkHost.split("/")[0];
+      boolean canUseACLs =
+          Optional.ofNullable(defaultZkHost.get()).map(zkHostNoChroot::equals).orElse(false);
       final List<String> hosts = new ArrayList<String>();
       hosts.add(zkHost);
-      CloudSolrClient.Builder builder = new CloudSolrClient.Builder(hosts, Optional.empty()).withSocketTimeout(30000).withConnectionTimeout(15000);
+      CloudSolrClient.Builder builder = new CloudSolrClient.Builder(hosts, Optional.empty()).withSocketTimeout(30000).withConnectionTimeout(15000).canUseZkACLs(canUseACLs);
       if (httpClient != null) {
         builder = builder.withHttpClient(httpClient);
       }
