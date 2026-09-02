@@ -73,6 +73,7 @@ import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.common.util.SuppressForbidden;
 import org.apache.solr.common.util.ContentStream;
 import org.apache.solr.common.util.ValidatingJsonMap;
 import org.apache.solr.common.util.NamedList;
@@ -200,7 +201,13 @@ public class HttpSolrCall {
       // this lets you handle /update/commit when /update is a servlet
       path += req.getPathInfo();
     }
+    normalizeAndSetPath(path);
     req.setAttribute(HttpSolrCall.class.getName(), this);
+  }
+
+  @SuppressForbidden(reason = "JDK String class doesn't offer a stripEnd equivalent")
+  protected void normalizeAndSetPath(String unnormalizedPath) {
+    this.path = StringUtils.stripEnd(unnormalizedPath, "/");
   }
 
   public String getPath() {
@@ -267,14 +274,14 @@ public class HttpSolrCall {
 
         core = cores.getCore(corename);
         if (core != null) {
-          path = path.substring(idx);
+          normalizeAndSetPath(path.substring(idx));
         } else if (cores.isCoreLoading(corename)) { // extra mem barriers, so don't look at this before trying to get core
           throw new SolrException(ErrorCode.SERVICE_UNAVAILABLE, "SolrCore is loading");
         } else {
           // the core may have just finished loading
           core = cores.getCore(corename);
           if (core != null) {
-            path = path.substring(idx);
+            normalizeAndSetPath(path.substring(idx));
           }
         }
       }
@@ -294,7 +301,7 @@ public class HttpSolrCall {
       core = getCoreByCollection(corename, isPreferLeader);
       if (core != null) {
         // we found a core, update the path
-        path = path.substring(idx);
+        normalizeAndSetPath(path.substring(idx));
         if (collectionsList == null)
           collectionsList = new ArrayList<>();
         collectionsList.add(corename);
@@ -443,7 +450,7 @@ public class HttpSolrCall {
       if (coreUrl != null
           && queryParams
           .get(DistributingUpdateProcessorFactory.DISTRIB_UPDATE_PARAM) == null) {
-        path = path.substring(idx);
+        normalizeAndSetPath(path.substring(idx));
         if (invalidStates != null) {
           //it does not make sense to send the request to a remote node
           throw new SolrException(SolrException.ErrorCode.INVALID_STATE, new String(Utils.toJSON(invalidStates), org.apache.lucene.util.IOUtils.UTF_8));

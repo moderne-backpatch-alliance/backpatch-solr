@@ -829,7 +829,7 @@ public class SolrConfigHandler extends RequestHandlerBase implements SolrCoreAwa
       case "POST":
         return Name.CONFIG_EDIT_PERM;
       default:
-        return null;
+        throw SchemaHandler.getUnexpectedHttpMethodException(ctx.getHttpMethod());
     }
   }
 
